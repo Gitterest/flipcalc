@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { AppHeader } from './components/AppHeader'
 import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { PowerToolFlipPage } from './pages/PowerToolFlipPage'
 
 export function App() {
   return (
@@ -10,6 +11,7 @@ export function App() {
       <main className="main-content">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/calculators/power-tool-flip" element={<PowerToolFlipPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

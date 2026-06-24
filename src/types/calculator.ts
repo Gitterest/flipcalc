@@ -6,4 +6,5 @@ export interface CalculatorDefinition {
   description: string
   category: string
   status: CalculatorStatus
+  route?: string
 }

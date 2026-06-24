@@ -34,7 +34,8 @@ export const calculatorCatalog: CalculatorDefinition[] = [
     name: 'Power Tool Flip',
     description: 'Evaluate tool condition, battery and charger inclusion, repair costs, and selling strategy.',
     category: 'Power Tools',
-    status: 'planned'
+    status: 'available',
+    route: '/calculators/power-tool-flip'
   },
   {
     id: 'chainsaw-flip',
