@@ -27,7 +27,8 @@ export const calculatorCatalog: CalculatorDefinition[] = [
     name: 'Phone Flip',
     description: 'Evaluate acquisition cost, known defects, repair expenses, parts value, and resale assumptions.',
     category: 'Phones',
-    status: 'planned'
+    status: 'available',
+    route: '/calculators/phone-flip'
   },
   {
     id: 'power-tool-flip',
