@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import { AppHeader } from './components/AppHeader'
+import { ChainsawFlipPage } from './pages/ChainsawFlipPage'
 import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PhoneFlipPage } from './pages/PhoneFlipPage'
@@ -12,6 +13,7 @@ export function App() {
       <main className="main-content">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/calculators/chainsaw-flip" element={<ChainsawFlipPage />} />
           <Route path="/calculators/phone-flip" element={<PhoneFlipPage />} />
           <Route path="/calculators/power-tool-flip" element={<PowerToolFlipPage />} />
           <Route path="*" element={<NotFoundPage />} />

@@ -43,6 +43,7 @@ export const calculatorCatalog: CalculatorDefinition[] = [
     name: 'Chainsaw Flip',
     description: 'Compare complete-sale, repaired-sale, and parts-out assumptions for a chainsaw.',
     category: 'Chainsaws',
-    status: 'planned'
+    status: 'available',
+    route: '/calculators/chainsaw-flip'
   }
 ]
