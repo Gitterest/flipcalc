@@ -6,7 +6,8 @@ export const calculatorCatalog: CalculatorDefinition[] = [
     name: 'General Flip Decision',
     description: 'Determine a safe buy price, expected profit, and whether a deal meets your targets.',
     category: 'General',
-    status: 'planned'
+    status: 'available',
+    route: '/calculators/general-flip'
   },
   {
     id: 'local-vs-shipped',
