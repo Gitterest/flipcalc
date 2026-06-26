@@ -2,11 +2,9 @@
 
 ## Implementation Mode
 
-FlipCalc currently uses the Stripe Payment Link MVP.
+FlipCalc now uses a verified backend entitlement flow for FlipCalc Pro.
 
-The repository is a frontend-only Vite application with no existing SoFlipCo API, backend, database, account, session, or entitlement storage pattern. Because there is no safe server surface in the current architecture, this phase does not create a fake client-only entitlement system.
-
-Automatic Pro unlocking requires a future backend implementation with Checkout Sessions, verified webhooks, idempotent fulfillment, and server-side entitlement verification.
+The previous Stripe Payment Link MVP is superseded. A Payment Link fallback remains documented and gated behind explicit client configuration for rollback only; it must not be used to claim automatic Pro unlock.
 
 ## Product Model
 
@@ -14,7 +12,7 @@ Product: FlipCalc Pro Lifetime
 
 Launch display price: $19.99 one-time
 
-The displayed launch price is marketing copy only. The Stripe-configured Price or hosted Payment Link controls the actual charge.
+The displayed price is marketing copy only. `STRIPE_FLIPCALC_PRO_LIFETIME_PRICE_ID` is the payment source of truth.
 
 Free calculator:
 
@@ -27,159 +25,191 @@ Pro calculators:
 - Chainsaw Flip
 - Local vs Shipped
 - Repair vs Sell As-Is
-- Every future premium calculator unless explicitly moved to the free calculator configuration
+- Every future specialized calculator unless explicitly added to `freeCalculatorIds`
 
-Planned Pro additions:
+## Backend Architecture
 
-- Reseller spreadsheet download
-- Future deal worksheets and templates
-- Future premium calculators
+Backend core:
+
+- `server/flipcalc/`
+
+Route adapter:
+
+- `api/flipcalc/[...path].ts`
+
+Storage:
+
+- Postgres adapter in `server/flipcalc/postgresStore.ts`
+- in-memory adapter for tests/local only
+
+Email:
+
+- Resend-compatible adapter
+- dev magic-link output only when explicitly enabled outside production
+
+The repository does not declare a production hosting target. The backend is Node/serverless compatible, but deployment readiness requires a platform that can serve same-origin API functions and durable Postgres storage.
+
+## API Contracts
+
+### `POST /api/flipcalc/checkout`
+
+Creates a Stripe Checkout Session server-side.
+
+Server-controlled:
+
+- Price ID
+- product metadata
+- entitlement metadata
+- success URL
+- cancel URL
+
+Browser-supplied amount, currency, Price ID, Product ID, success URL, cancel URL, and entitlement type are rejected.
+
+### `POST /api/flipcalc/stripe-webhook`
+
+Receives the raw body, verifies the Stripe signature, and processes supported events idempotently.
+
+### `POST /api/flipcalc/access/request`
+
+Accepts `email` and always returns the same neutral response for valid requests.
+
+### `GET /api/flipcalc/access/verify`
+
+Consumes a short-lived single-use token, creates an HTTP-only session cookie, and redirects to a safe FlipCalc path.
+
+### `GET /api/flipcalc/entitlement`
+
+Returns minimal access state:
+
+```json
+{ "pro": false }
+```
+
+or:
+
+```json
+{ "pro": true }
+```
+
+### `POST /api/flipcalc/logout`
+
+Clears the FlipCalc Pro session cookie.
+
+### `GET /api/flipcalc/purchase-status?session_id=...`
+
+Returns:
+
+- `pending`
+- `paid`
+- `failed`
+
+This endpoint never creates entitlement.
 
 ## Required Environment Variables
 
-Server-only variables for the future verified backend:
+Server-only:
 
 - `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_FLIPCALC_WEBHOOK_SECRET`
 - `STRIPE_FLIPCALC_PRO_LIFETIME_PRICE_ID`
 - `FLIPCALC_APP_ORIGIN`
+- `FLIPCALC_SESSION_SECRET`
+- `FLIPCALC_ACCESS_TOKEN_TTL_MINUTES`
+- `FLIPCALC_SESSION_TTL_DAYS`
+- `DATABASE_URL`
+- `RESEND_API_KEY`
+- `FLIPCALC_ACCESS_EMAIL_FROM`
 
-Client-safe variable for the current Payment Link MVP:
+Client-safe only when required:
 
+- `VITE_FLIPCALC_API_ORIGIN`
+- `VITE_FLIPCALC_ENABLE_PAYMENT_LINK_FALLBACK`
 - `VITE_FLIPCALC_CHECKOUT_URL`
 
-Do not prefix server secrets with `VITE_`. Do not commit `.env` files. Do not commit secret values.
+Do not commit `.env`. Do not prefix server secrets with `VITE_`.
 
-## Stripe Product and Price Setup
+## Stripe Setup
 
-Create a Stripe Product named `FlipCalc Pro Lifetime`.
+Create Stripe Product:
 
-Create a one-time Stripe Price for the product. The launch display price is $19.99, but Stripe is the source of truth for the amount charged.
+- `FlipCalc Pro Lifetime`
 
-For the Payment Link MVP, create a Stripe Payment Link using that Price and set:
+Create one-time Stripe Price and set:
 
-- Success URL: `/purchase/success`
-- Cancel URL: `/pricing` or `/purchase/cancel`
+- `STRIPE_FLIPCALC_PRO_LIFETIME_PRICE_ID`
 
-Set `VITE_FLIPCALC_CHECKOUT_URL` to the hosted Payment Link URL in the deployment environment.
+Configure Checkout Session success URL:
 
-## Payment Link MVP Flow
+- `${FLIPCALC_APP_ORIGIN}/purchase/success?session_id={CHECKOUT_SESSION_ID}`
 
-1. Visitor views `/pricing`.
-2. The pricing page reads `VITE_FLIPCALC_CHECKOUT_URL`.
-3. If the URL is configured and valid, the primary CTA links to Stripe-hosted checkout.
-4. If the URL is missing or invalid, the CTA is disabled with a clear configuration message.
-5. Returning to `/purchase/success` does not unlock Pro.
-6. Premium calculators remain locked because there is no verified entitlement backend yet.
+Configure cancel URL:
 
-The success page is intentionally truthful: a URL return is not payment proof.
+- `${FLIPCALC_APP_ORIGIN}/purchase/cancel`
 
-## Future Verified Checkout Session Flow
+## Webhook Setup
 
-When a backend exists, replace the Payment Link MVP with:
+Webhook endpoint:
 
-1. Server endpoint creates a Stripe Checkout Session.
-2. Server uses `STRIPE_FLIPCALC_PRO_LIFETIME_PRICE_ID`.
-3. Checkout mode is `payment`.
-4. Success URL is `/purchase/success?session_id={CHECKOUT_SESSION_ID}`.
-5. Cancel URL is `/pricing`.
-6. Webhook endpoint verifies `STRIPE_WEBHOOK_SECRET` against the raw request body.
-7. Handle `checkout.session.completed`.
-8. Fulfillment is idempotent.
-9. Store the Pro entitlement using the backend database pattern.
-10. Client checks entitlement through the server.
-11. Premium routes unlock only after verified entitlement exists.
+- `/api/flipcalc/stripe-webhook`
 
-Never let the client choose an arbitrary Price ID. Never place the payment amount in a client request as payment truth.
-
-## Webhooks and Raw Body Verification
-
-The future webhook endpoint must read the raw request body before parsing JSON. Stripe signature verification must reject invalid signatures before any fulfillment code runs.
-
-Required event:
+Required events:
 
 - `checkout.session.completed`
+- `charge.refunded`
+- `charge.dispute.created`
+- `charge.dispute.closed`
 
-Future subscription or refund behavior may add more events, but those must be documented with the implementation.
+The webhook must use the raw request body for signature verification. Query-string success is not payment proof.
 
-## Idempotent Fulfillment
+## Entitlement Lifecycle
 
-Fulfillment must record processed Stripe event IDs or checkout session IDs before granting access. Duplicate webhook events must not duplicate entitlement rows or grant conflicting access states.
+- `active`: grants Pro
+- `refunded`: denies Pro
+- `disputed`: denies Pro
+- `revoked`: denies Pro
 
-## Entitlement Storage and Verification
+Refunds and disputes update stored entitlement state. The entitlement endpoint validates stored status on every request, so a previously valid cookie fails closed after refund, dispute, or revocation.
 
-The current app has no account or database layer. Future entitlement storage must use the real backend identity/session model when it exists.
+## Passwordless Access
 
-The client must fail safely:
+FlipCalc does not create password accounts.
 
-- Loading state must not expose premium forms.
-- Error state must not unlock premium calculators.
-- Logout or entitlement loss must remove access where applicable.
-- Direct premium route navigation must enforce the same access rule as catalog navigation.
+The buyer enters the checkout email. If an active entitlement exists, a short-lived single-use magic link is sent. The public response does not reveal whether the email owns Pro.
 
-## Refund and Chargeback Behavior
+## Why LocalStorage and Query Strings Are Not Proof
 
-Refund and chargeback handling is not automated in the Payment Link MVP.
+Browser storage and URL parameters can be edited by the user. They are never used as payment truth or entitlement proof.
 
-When a verified backend exists, refund and chargeback events should revoke or suspend Pro entitlement according to the published refund policy. The behavior must be documented before launch.
+## Donations
 
-## Donations and Support Payments
+Donations and support payments are separate from FlipCalc Pro. They do not unlock Pro automatically and must not be presented as license purchases.
 
-Donations are separate from FlipCalc Pro purchase.
+## Payment Link Migration
 
-Bitcoin, Monero, PayPal, Cash App, or other support methods must be labeled as support or donations. They must not be presented as a Pro license purchase and must not unlock Pro automatically without a separate verified entitlement workflow.
+The old Payment Link MVP is superseded by backend Checkout Sessions.
 
-## Why Success Query Parameters Are Not Payment Proof
+Fallback can be enabled only with:
 
-Anyone can visit a success URL manually. Query-string values can be copied or fabricated. FlipCalc must never grant Pro access from a URL parameter alone.
+- `VITE_FLIPCALC_ENABLE_PAYMENT_LINK_FALLBACK=true`
+- `VITE_FLIPCALC_CHECKOUT_URL`
 
-## Why Local Storage Is Not Payment Proof
+Fallback does not create verified entitlement by itself.
 
-Browser storage is controlled by the user and can be edited. It is acceptable for theme preference or non-sensitive UI settings, but it is not acceptable as proof of purchase.
+## Local Development
 
-## Local Test Mode
+1. Copy `.env.example` into a local `.env`.
+2. Use Stripe test keys.
+3. Configure a test Price ID.
+4. Configure Postgres and run the schema.
+5. Configure Resend or set `FLIPCALC_DEV_EXPOSE_MAGIC_LINKS=true` outside production.
+6. Run `npm run dev`.
+7. Run `npm test`.
+8. Run `npm run build`.
 
-For the Payment Link MVP:
+## Known Limitations
 
-1. Create a Stripe test-mode Payment Link.
-2. Set `VITE_FLIPCALC_CHECKOUT_URL` locally.
-3. Run `npm run dev`.
-4. Verify the pricing CTA opens the hosted Stripe test checkout.
-5. Verify `/purchase/success` does not claim access is active.
-6. Verify premium calculator routes remain locked.
-
-For the future backend:
-
-1. Use Stripe test keys.
-2. Use Stripe CLI to forward webhooks to the local webhook endpoint.
-3. Verify invalid signatures are rejected.
-4. Verify duplicate events are idempotent.
-5. Verify entitlements are stored and checked server-side.
-
-## Production Deployment Checklist
-
-- Rotate any previously exposed live Stripe secret key, webhook secret, admin password, or admin session secret before production deployment.
-- Store secrets only in the deployment provider secret manager.
-- Set `VITE_FLIPCALC_CHECKOUT_URL` only to the intended hosted Payment Link for the current MVP.
-- Do not expose `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_FLIPCALC_PRO_LIFETIME_PRICE_ID`, or `FLIPCALC_APP_ORIGIN` in the client bundle.
-- Confirm `/pricing`, `/purchase/success`, and premium locked routes work on mobile.
-- Confirm General Flip remains fully usable without signup or payment.
-- Confirm donations remain visually and functionally separate from Pro purchase.
-
-## Adding Future Premium Calculators
-
-Add the calculator to the catalog and leave it out of `freeCalculatorIds` in `src/calculators/access.ts`. Premium is the default because any calculator not listed as free resolves to Pro.
-
-## Changing the Free Calculator
-
-Update `freeCalculatorIds` in `src/calculators/access.ts` and update the pricing, homepage, and documentation copy to match the new launch access model.
-
-## Adding Future Subscription Pricing
-
-Add subscription-specific environment variables and a server-side Checkout Session flow. Keep lifetime and subscription prices server-controlled. Do not make the client the source of payment truth.
-
-## `.env` Handling
-
-Use local `.env` files only on the developer machine and deployment environment variables in production. Never commit `.env` or copied secret values.
-
-Client-safe values may use the `VITE_` prefix. Server-only secrets must never use the `VITE_` prefix.
+- Production hosting is not declared in the repository.
+- The in-memory store is not production storage.
+- The in-memory rate limiter is not shared across multiple instances.
+- Production email delivery requires `RESEND_API_KEY` and `FLIPCALC_ACCESS_EMAIL_FROM`.
+- Deployment has not been performed.

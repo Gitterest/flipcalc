@@ -7,8 +7,8 @@ export function PurchaseCancelPage() {
         <p className="eyebrow">Checkout canceled</p>
         <h1 id="purchase-cancel-heading">No FlipCalc Pro checkout was completed here.</h1>
         <p>
-          You returned from the purchase path without confirmed payment verification in FlipCalc. General Flip remains
-          available for free.
+          You returned from Stripe before verified checkout completion. General Flip remains available for free, and Pro
+          access can be requested after a completed paid purchase.
         </p>
         <div className="button-row">
           <Link className="primary-button" to="/pricing">
