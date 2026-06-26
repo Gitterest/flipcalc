@@ -13,7 +13,8 @@ export const calculatorCatalog: CalculatorDefinition[] = [
     name: 'Local vs Shipped Sale',
     description: 'Compare local delivery expenses against online selling fees and shipping costs.',
     category: 'Selling',
-    status: 'planned'
+    status: 'available',
+    route: '/calculators/local-vs-shipped'
   },
   {
     id: 'repair-vs-as-is',
