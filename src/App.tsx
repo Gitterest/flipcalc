@@ -6,6 +6,7 @@ import { LocalVsShippedPage } from './pages/LocalVsShippedPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PhoneFlipPage } from './pages/PhoneFlipPage'
 import { PowerToolFlipPage } from './pages/PowerToolFlipPage'
+import { RepairVsAsIsPage } from './pages/RepairVsAsIsPage'
 
 export function App() {
   return (
@@ -18,6 +19,7 @@ export function App() {
           <Route path="/calculators/local-vs-shipped" element={<LocalVsShippedPage />} />
           <Route path="/calculators/phone-flip" element={<PhoneFlipPage />} />
           <Route path="/calculators/power-tool-flip" element={<PowerToolFlipPage />} />
+          <Route path="/calculators/repair-vs-as-is" element={<RepairVsAsIsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

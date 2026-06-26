@@ -21,7 +21,8 @@ export const calculatorCatalog: CalculatorDefinition[] = [
     name: 'Repair vs Sell As-Is',
     description: 'Compare the expected outcome of repairing an item against selling it in current condition.',
     category: 'Repair',
-    status: 'planned'
+    status: 'available',
+    route: '/calculators/repair-vs-as-is'
   },
   {
     id: 'phone-flip',
