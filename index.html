@@ -3,9 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#111827" />
+    <meta name="theme-color" content="#080b12" />
     <meta name="description" content="Niche calculators for resellers and item flippers." />
     <title>FlipCalc</title>
+    <script>
+      ;(() => {
+        let preference = 'system'
+
+        try {
+          const storedPreference = localStorage.getItem('flipcalc-theme-preference')
+          preference = storedPreference === 'light' || storedPreference === 'dark' ? storedPreference : 'system'
+        } catch {
+          preference = 'system'
+        }
+
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        const resolvedTheme = preference === 'system' ? systemTheme : preference
+        const themeColor = resolvedTheme === 'dark' ? '#080b12' : '#f5f1e8'
+        document.documentElement.dataset.theme = resolvedTheme
+        document.documentElement.dataset.themePreference = preference
+        document.documentElement.style.colorScheme = resolvedTheme
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor)
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

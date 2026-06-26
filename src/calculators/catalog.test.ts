@@ -17,6 +17,7 @@ describe('calculatorCatalog', () => {
 
       expect(calculator.name.trim()).not.toBe('')
       expect(calculator.description.trim()).not.toBe('')
+      expect(calculator.question.trim()).not.toBe('')
       expect(calculator.category.trim()).not.toBe('')
       expect(validStatuses.has(calculator.status)).toBe(true)
 
