@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { AppHeader } from './components/AppHeader'
 import { ChainsawFlipPage } from './pages/ChainsawFlipPage'
 import { HomePage } from './pages/HomePage'
+import { LocalVsShippedPage } from './pages/LocalVsShippedPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PhoneFlipPage } from './pages/PhoneFlipPage'
 import { PowerToolFlipPage } from './pages/PowerToolFlipPage'
@@ -14,6 +15,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/calculators/chainsaw-flip" element={<ChainsawFlipPage />} />
+          <Route path="/calculators/local-vs-shipped" element={<LocalVsShippedPage />} />
           <Route path="/calculators/phone-flip" element={<PhoneFlipPage />} />
           <Route path="/calculators/power-tool-flip" element={<PowerToolFlipPage />} />
           <Route path="*" element={<NotFoundPage />} />
