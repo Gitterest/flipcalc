@@ -9,10 +9,10 @@ export function AppFooter() {
       </div>
       <nav aria-label="Footer links">
         <Link to="/pricing">Pricing</Link>
-        <a href="mailto:support@flipcalc.app">Contact</a>
-        <a aria-disabled="true">Terms</a>
-        <a aria-disabled="true">Privacy</a>
-        <a aria-disabled="true">Refund Policy</a>
+        <Link to="/contact">Contact</Link>
+        <Link to="/terms">Terms</Link>
+        <Link to="/privacy">Privacy</Link>
+        <Link to="/refund-policy">Refund Policy</Link>
       </nav>
     </footer>
   )

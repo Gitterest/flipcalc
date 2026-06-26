@@ -1,10 +1,21 @@
 import { Link } from 'react-router-dom'
 import { calculatorCatalog } from '../calculators/catalog'
 import { getCalculatorAccess } from '../calculators/access'
+import {
+  checkoutUrlEnvKey,
+  flipCalcProLaunchPriceDisplay,
+  flipCalcProProductName,
+  getCheckoutConfiguration,
+  monetizationImplementationMode
+} from '../monetization'
 
 const proCalculators = calculatorCatalog.filter((calculator) => getCalculatorAccess(calculator) === 'pro')
 
 export function PricingPage() {
+  const checkoutConfiguration = getCheckoutConfiguration({
+    VITE_FLIPCALC_CHECKOUT_URL: import.meta.env.VITE_FLIPCALC_CHECKOUT_URL
+  })
+
   return (
     <section className="pricing-page" aria-labelledby="pricing-heading">
       <div className="pricing-hero">
@@ -33,21 +44,31 @@ export function PricingPage() {
 
         <section className="pricing-card pro-plan" aria-labelledby="pro-plan-heading">
           <span className="plan-kicker">Pro Lifetime</span>
-          <h2 id="pro-plan-heading">$19.99 one-time launch display price</h2>
+          <h2 id="pro-plan-heading">{flipCalcProLaunchPriceDisplay} one-time launch display price</h2>
           <p>
-            The actual charge will be controlled by the configured Stripe Price in Phase 2. This page is the Phase 1
-            pricing preview and access destination.
+            The actual charge is controlled by the configured Stripe Payment Link and Stripe Price, not by client display
+            text.
           </p>
           <ul>
+            <li>{flipCalcProProductName}</li>
             {proCalculators.map((calculator) => (
               <li key={calculator.id}>{calculator.name}</li>
             ))}
             <li>Future premium calculators</li>
             <li>Reseller spreadsheet download when implemented</li>
           </ul>
-          <button className="primary-button" type="button" disabled>
-            Stripe checkout connects in Phase 2
-          </button>
+          {checkoutConfiguration.isConfigured && checkoutConfiguration.checkoutUrl !== null ? (
+            <a className="primary-button" href={checkoutConfiguration.checkoutUrl}>
+              Get FlipCalc Pro
+            </a>
+          ) : (
+            <button className="primary-button" type="button" disabled>
+              Checkout Not Configured
+            </button>
+          )}
+          <p className="checkout-status" role="status">
+            {checkoutConfiguration.message}
+          </p>
         </section>
       </div>
 
@@ -58,6 +79,16 @@ export function PricingPage() {
           <p>Formulas are transparent and documented.</p>
           <p>FlipCalc does not invent market prices.</p>
           <p>Planning estimates are not profit guarantees.</p>
+        </div>
+      </section>
+
+      <section className="trust-panel" aria-labelledby="payment-trust-heading">
+        <h2 id="payment-trust-heading">Payment implementation</h2>
+        <div className="trust-grid">
+          <p>Mode: {monetizationImplementationMode}</p>
+          <p>Checkout URL variable: {checkoutUrlEnvKey}</p>
+          <p>Success returns are not treated as payment proof.</p>
+          <p>Donations or support payments do not unlock Pro.</p>
         </div>
       </section>
     </section>

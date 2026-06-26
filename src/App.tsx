@@ -11,8 +11,11 @@ import { LockedCalculatorPage } from './pages/LockedCalculatorPage'
 import { LocalVsShippedPage } from './pages/LocalVsShippedPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PhoneFlipPage } from './pages/PhoneFlipPage'
+import { ContactPage, PrivacyPage, RefundPolicyPage, TermsPage } from './pages/PolicyPage'
 import { PowerToolFlipPage } from './pages/PowerToolFlipPage'
 import { PricingPage } from './pages/PricingPage'
+import { PurchaseCancelPage } from './pages/PurchaseCancelPage'
+import { PurchaseSuccessPage } from './pages/PurchaseSuccessPage'
 import { RepairVsAsIsPage } from './pages/RepairVsAsIsPage'
 import type { CalculatorDefinition } from './types/calculator'
 
@@ -43,6 +46,12 @@ export function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/purchase/success" element={<PurchaseSuccessPage />} />
+          <Route path="/purchase/cancel" element={<PurchaseCancelPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route
             path="/calculators/chainsaw-flip"
             element={
