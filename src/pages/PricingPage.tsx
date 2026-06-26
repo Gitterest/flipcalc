@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { calculatorCatalog } from '../calculators/catalog'
 import { getCalculatorAccess } from '../calculators/access'
+import { startVerifiedCheckout } from '../entitlementClient'
 import {
   checkoutUrlEnvKey,
   flipCalcProLaunchPriceDisplay,
@@ -8,13 +9,37 @@ import {
   getCheckoutConfiguration,
   monetizationImplementationMode
 } from '../monetization'
+import { ProAccessForm } from '../components/ProAccessForm'
+import { useState } from 'react'
 
 const proCalculators = calculatorCatalog.filter((calculator) => getCalculatorAccess(calculator) === 'pro')
 
 export function PricingPage() {
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const checkoutConfiguration = getCheckoutConfiguration({
-    VITE_FLIPCALC_CHECKOUT_URL: import.meta.env.VITE_FLIPCALC_CHECKOUT_URL
+    VITE_FLIPCALC_API_ORIGIN: import.meta.env.VITE_FLIPCALC_API_ORIGIN,
+    VITE_FLIPCALC_CHECKOUT_URL: import.meta.env.VITE_FLIPCALC_CHECKOUT_URL,
+    VITE_FLIPCALC_ENABLE_PAYMENT_LINK_FALLBACK: import.meta.env.VITE_FLIPCALC_ENABLE_PAYMENT_LINK_FALLBACK
   })
+
+  async function handleCheckout() {
+    if (checkoutLoading) {
+      return
+    }
+
+    setCheckoutLoading(true)
+    setCheckoutError(null)
+
+    try {
+      const checkout = await startVerifiedCheckout(checkoutConfiguration)
+      window.location.assign(checkout.url)
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Unable to start checkout.')
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }
 
   return (
     <section className="pricing-page" aria-labelledby="pricing-heading">
@@ -46,8 +71,8 @@ export function PricingPage() {
           <span className="plan-kicker">Pro Lifetime</span>
           <h2 id="pro-plan-heading">{flipCalcProLaunchPriceDisplay} one-time launch display price</h2>
           <p>
-            The actual charge is controlled by the configured Stripe Payment Link and Stripe Price, not by client display
-            text.
+            The actual charge is controlled by the configured Stripe Price ID on the backend, not by client display text
+            or browser-supplied amounts.
           </p>
           <ul>
             <li>{flipCalcProProductName}</li>
@@ -57,18 +82,24 @@ export function PricingPage() {
             <li>Future premium calculators</li>
             <li>Reseller spreadsheet download when implemented</li>
           </ul>
-          {checkoutConfiguration.isConfigured && checkoutConfiguration.checkoutUrl !== null ? (
+          {checkoutConfiguration.paymentLinkFallbackEnabled && checkoutConfiguration.checkoutUrl !== null ? (
             <a className="primary-button" href={checkoutConfiguration.checkoutUrl}>
-              Get FlipCalc Pro
+              Get FlipCalc Pro With Payment Link
             </a>
           ) : (
-            <button className="primary-button" type="button" disabled>
-              Checkout Not Configured
+            <button className="primary-button" type="button" onClick={() => void handleCheckout()} disabled={checkoutLoading}>
+              {checkoutLoading ? 'Opening Checkout...' : 'Get FlipCalc Pro'}
             </button>
           )}
           <p className="checkout-status" role="status">
             {checkoutConfiguration.message}
           </p>
+          {checkoutError !== null ? (
+            <p className="field-error" role="alert">
+              {checkoutError}
+            </p>
+          ) : null}
+          <ProAccessForm />
         </section>
       </div>
 
@@ -86,7 +117,8 @@ export function PricingPage() {
         <h2 id="payment-trust-heading">Payment implementation</h2>
         <div className="trust-grid">
           <p>Mode: {monetizationImplementationMode}</p>
-          <p>Checkout URL variable: {checkoutUrlEnvKey}</p>
+          <p>Backend checkout endpoint: /api/flipcalc/checkout</p>
+          <p>Fallback variable when explicitly enabled: {checkoutUrlEnvKey}</p>
           <p>Success returns are not treated as payment proof.</p>
           <p>Donations or support payments do not unlock Pro.</p>
         </div>

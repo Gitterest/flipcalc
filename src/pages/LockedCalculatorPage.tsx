@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom'
+import { ProAccessForm } from '../components/ProAccessForm'
 import type { CalculatorDefinition } from '../types/calculator'
 
 interface LockedCalculatorPageProps {
   calculator: CalculatorDefinition
+  accessState?: 'loading' | 'locked'
+  accessError?: string | null
 }
 
-export function LockedCalculatorPage({ calculator }: LockedCalculatorPageProps) {
+export function LockedCalculatorPage({ calculator, accessState = 'locked', accessError = null }: LockedCalculatorPageProps) {
   return (
     <section className="locked-page" aria-labelledby="locked-calculator-heading">
       <div className="locked-panel">
@@ -26,6 +29,18 @@ export function LockedCalculatorPage({ calculator }: LockedCalculatorPageProps) 
             usable for free.
           </span>
         </div>
+        {accessState === 'loading' ? (
+          <div className="locked-callout" role="status">
+            <strong>Checking Pro access.</strong>
+            <span>The calculator form stays hidden until verified entitlement is confirmed.</span>
+          </div>
+        ) : null}
+        {accessError !== null ? (
+          <div className="locked-callout" role="alert">
+            <strong>Unable to verify Pro access.</strong>
+            <span>{accessError} Access fails closed until the server confirms entitlement.</span>
+          </div>
+        ) : null}
         <div className="button-row">
           <Link className="primary-button" to="/pricing">
             View FlipCalc Pro
@@ -34,6 +49,7 @@ export function LockedCalculatorPage({ calculator }: LockedCalculatorPageProps) 
             Run a Free Deal
           </Link>
         </div>
+        <ProAccessForm />
       </div>
     </section>
   )

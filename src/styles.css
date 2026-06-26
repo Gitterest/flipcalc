@@ -155,6 +155,7 @@ button:disabled {
 }
 
 .header-nav a,
+.header-nav button,
 .secondary-link,
 .app-footer a {
   min-height: 44px;
@@ -169,6 +170,14 @@ button:disabled {
 
 .header-nav a {
   padding: 0 var(--space-3);
+}
+
+.nav-button {
+  padding: 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  font-weight: 800;
 }
 
 .theme-control {
@@ -592,7 +601,8 @@ p {
 }
 
 .calculator-form,
-.results-panel {
+.results-panel,
+.pro-access-form {
   display: grid;
   gap: var(--space-4);
 }
@@ -730,6 +740,10 @@ p {
 
 .contextual-pro-cta h3 {
   margin: 0;
+}
+
+.pro-access-form {
+  margin-top: var(--space-5);
 }
 
 .locked-page {

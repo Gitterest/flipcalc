@@ -4,6 +4,7 @@ import { canAccessCalculator } from './calculators/access'
 import { calculatorCatalog } from './calculators/catalog'
 import { AppFooter } from './components/AppFooter'
 import { AppHeader } from './components/AppHeader'
+import { useProAccess } from './components/proAccessContext'
 import { ChainsawFlipPage } from './pages/ChainsawFlipPage'
 import { GeneralFlipPage } from './pages/GeneralFlipPage'
 import { HomePage } from './pages/HomePage'
@@ -24,15 +25,22 @@ const localVsShipped = calculatorCatalog.find((calculator) => calculator.id === 
 const phoneFlip = calculatorCatalog.find((calculator) => calculator.id === 'phone-flip')
 const powerToolFlip = calculatorCatalog.find((calculator) => calculator.id === 'power-tool-flip')
 const repairVsAsIs = calculatorCatalog.find((calculator) => calculator.id === 'repair-vs-as-is')
-const hasProEntitlement = false
 
 function CalculatorRoute({ calculator, children }: { calculator: CalculatorDefinition | undefined; children: ReactElement }) {
+  const proAccess = useProAccess()
+
   if (calculator === undefined) {
     return <NotFoundPage />
   }
 
-  if (!canAccessCalculator(calculator, hasProEntitlement)) {
-    return <LockedCalculatorPage calculator={calculator} />
+  if (!canAccessCalculator(calculator, proAccess.pro)) {
+    return (
+      <LockedCalculatorPage
+        calculator={calculator}
+        accessState={proAccess.loading ? 'loading' : 'locked'}
+        accessError={proAccess.error}
+      />
+    )
   }
 
   return children
