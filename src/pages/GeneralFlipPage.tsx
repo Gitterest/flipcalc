@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   calculateGeneralFlip,
   defaultGeneralFlipInput,
@@ -164,6 +165,7 @@ export function GeneralFlipPage() {
   const [formState, setFormState] = useState<Record<GeneralFlipField, string>>(createInitialFormState)
   const [errors, setErrors] = useState<Partial<Record<GeneralFlipField, string>>>({})
   const [result, setResult] = useState<GeneralFlipOutput | null>(null)
+  const errorEntries = Object.entries(errors)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -193,14 +195,29 @@ export function GeneralFlipPage() {
       <div className="calculator-intro">
         <p className="eyebrow">General</p>
         <h1 id="general-flip-heading">General Flip Decision Calculator</h1>
+        <p className="question-line">What is the highest price you can safely pay?</p>
         <p>
           Determine whether a flip is a buy, negotiate, or pass from user-supplied sale, fee, shipping, cost, time,
           profit, and ROI assumptions.
         </p>
+        <div className="assumption-notice" role="note">
+          Every value is supplied by you. FlipCalc does not invent market prices, fees, or profit guarantees.
+        </div>
       </div>
 
       <div className="calculator-layout">
         <form className="calculator-form" onSubmit={handleSubmit} noValidate>
+          {errorEntries.length === 0 ? null : (
+            <div className="error-summary" role="alert" aria-label="Input errors">
+              <strong>Check these fields before calculating:</strong>
+              <ul>
+                {errorEntries.map(([field, message]) => (
+                  <li key={field}>{message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {fieldGroups.map((group) => (
             <fieldset className="input-group" key={group.title}>
               <legend>{group.title}</legend>
@@ -215,6 +232,7 @@ export function GeneralFlipPage() {
                     <div className="field-control" key={definition.field}>
                       <label htmlFor={inputId}>{definition.label}</label>
                       <div className="input-row">
+                        {definition.suffix === undefined ? <span aria-hidden="true">$</span> : null}
                         <input
                           aria-describedby={fieldError === undefined ? helperId : `${helperId} ${errorId}`}
                           aria-invalid={fieldError === undefined ? undefined : true}
@@ -249,7 +267,7 @@ export function GeneralFlipPage() {
             </fieldset>
           ))}
 
-          <div className="form-actions">
+          <div className="form-actions action-bar">
             <button type="submit">Calculate</button>
             <button type="button" className="secondary-button" onClick={handleReset}>
               Reset
@@ -258,7 +276,7 @@ export function GeneralFlipPage() {
         </form>
 
         <aside className="results-panel" aria-live="polite" aria-labelledby="results-heading">
-          <h2 id="results-heading">Results</h2>
+          <h2 id="results-heading">{result === null ? 'Results' : 'Your Deal Analysis'}</h2>
           {result === null ? (
             <p className="empty-results">Enter your assumptions and calculate to evaluate the flip.</p>
           ) : (
@@ -330,6 +348,18 @@ export function GeneralFlipPage() {
                   <dd>{formatCurrency(Math.abs(result.amountBelowMaximum))}</dd>
                 </div>
               </dl>
+
+              <section className="contextual-pro-cta" aria-labelledby="next-step-heading">
+                <p className="eyebrow">Next limitation</p>
+                <h3 id="next-step-heading">Need to compare specialized exit strategies?</h3>
+                <p>
+                  Unlock Local vs Shipped, Repair vs Sell As-Is, Phone Flip, Chainsaw Flip, and Power Tool Flip with
+                  FlipCalc Pro.
+                </p>
+                <Link className="primary-button" to="/pricing">
+                  Compare every exit strategy with Pro
+                </Link>
+              </section>
             </>
           )}
         </aside>
